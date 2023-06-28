@@ -15,31 +15,26 @@
     (pattern name:id
       #:attr annot #'any/c
       #:attr wrapped (recursive-wrapper #'name))
-    (pattern [name:id annot]
-      #:attr wrapped #'name))
-  (define (generate-field-recur recur-stx field)
-    (syntax-parse field
-      [field:id #`(#,recur-stx field)]
-      [field:aster-field #`field.name]))
-  (define (generate-fields-recurs recur-stx fields)
-    (datum->syntax #'ctx
-                   (map (curry generate-field-recur recur-stx) (syntax-e fields))))
+    (pattern [name:id (~datum :) annot]
+      #:attr wrapped #'name)
+    (pattern [(~literal list) (~var x (aster-field recursive-wrapper))]
+      #:with (n) (generate-temporaries #'(x))
+      #:attr name #'n
+      #:attr annot #'(listof x.annot)
+      #:attr wrapped #`(map (λ (x.name) x.wrapped) n)))
   (struct asteroid-static-infos (cata-id forms) #:transparent))
 
 
 (define-syntax (define-asteroid stx)
   (syntax-parse stx
-    [(_ aster-name:id (tag:id field:aster-field ...) ...)
-     #:with ((recur-field ...) ...) (datum->syntax #'ctx
-                                                   (map (curry generate-fields-recurs #'(self f))
-                                                        (syntax-e #'((field ...) ...))))
+    [(_ aster-name:id (tag:id (~var field (aster-field (λ (x) #`((self f) #,x)))) ...) ...)
      #`(begin
          (define-syntax aster-name (asteroid-static-infos #'aster-cata (quote-syntax ((tag field ...) ...))))
          (struct/contract tag ([field.name field.annot] ...) #:transparent)
          ...
          (define ((((aster-cata extension) self) f) ast)
            (match ast
-             [(tag field.name ...) (f (tag recur-field ...))] ...
+             [(tag field.name ...) (f (tag field.wrapped ...))] ...
              [_ (((extension self) f) ast)])))]))
 
 
@@ -63,15 +58,10 @@
        ((fix f) x))))
 
 (define (((base-cata self) f) ast)
-  (error "no matching clause for catamorphism"))
-
-(define (combine-cata cata-set)
-  (define cata-list (set->list cata-set))
-  (fix (foldr (λ (x y)
-                (x y)) base-cata cata-list)))
+  (error (format "catamorphism: no matching clause for ~a" ast)))
 
 (define (base-dispatcher ast)
-  (error "no match clause for dispatcher"))
+  (error (format "dispatcher: no match clause for ~a" ast)))
 
 (begin-for-syntax
   (struct satellite-static-infos (asteroids-box cata-box dispatcher-box transformer)
@@ -87,22 +77,7 @@
                                                                    (define satellite-v #`((fix #,(unbox cata-box)) #,(unbox dispatcher-box)))
                                                                    (syntax-parse stx
                                                                      [x:id satellite-v]
-                                                                     [(x args (... ...)) #`(#,satellite-v args (... ...))])))))]))
-  (define (satellite-add-new-asteroid! satellite-name asteroid)
-    (define satellite-meta (syntax-local-value satellite-name))
-    (match satellite-meta
-      [(satellite-static-infos asteroids-box _ _ _)
-       (set-box! asteroids-box (cons asteroid (unbox asteroids-box)))]))
-  (define (satellite-update-cata! satellite-name cata-id)
-    (define satellite-meta (syntax-local-value satellite-name))
-    (match satellite-meta
-      [(satellite-static-infos _ cata-box _ _)
-       (set-box! cata-box cata-id)]))
-  (define (satellite-update-dispatcher! satellite-name dispatcher-id)
-    (define satellite-meta (syntax-local-value satellite-name))
-    (match satellite-meta
-      [(satellite-static-infos _ _ dispatcher-box _)
-       (set-box! dispatcher-box dispatcher-id)])))
+                                                                     [(x args (... ...)) #`(#,satellite-v args (... ...))])))))])))
 
 (define-syntax (define-satellite stx)
   (syntax-parse stx
@@ -119,28 +94,31 @@
            (define old-asteroids (unbox asteroids-box))
            (define new-asteroid (not (memf (curry free-identifier=? #'aster-name) old-asteroids)))
            (define update-asteroids (if new-asteroid
-                                        #`(begin-for-syntax (satellite-add-new-asteroid! #'satellite-name #'aster-name))
+                                        #`(set-box! asteroids-box (cons #'aster-name (unbox asteroids-box)))
                                         #`(void)))
 
            (define old-cata (syntax-local-introduce (unbox cata-box)))
            (match-define (asteroid-static-infos aster-cata forms) (syntax-local-value #'aster-name))
            (define cata-def (if new-asteroid #`(define cata (#,aster-cata #,old-cata))
                                 #`(begin)))
-           (define update-cata #`(begin-for-syntax (satellite-update-cata! #'satellite-name (syntax-local-introduce #'cata))))
+           (define update-cata (if new-asteroid #`(set-box! cata-box (quote-syntax cata))
+                                   #`(begin)))
            
            (define old-dispatcher (syntax-local-introduce (unbox dispatcher-box)))
-           (define update-dispatcher #`(begin-for-syntax (satellite-update-dispatcher! #'satellite-name  (syntax-local-introduce #'dispatcher))))]
+           (define update-dispatcher #`(set-box! dispatcher-box (quote-syntax dispatcher)))]
      #`(begin
          (define (dispatcher ast)
            (match ast
              match-clauses ...
              [else (#,old-dispatcher ast)]))
          #,cata-def
-
-         #,update-asteroids
-         #,update-cata
-         #,update-dispatcher
-         )]))
+         (begin-for-syntax
+           (define satellite-meta (syntax-local-value #'satellite-name))
+           (match-define (satellite-static-infos asteroids-box cata-box dispatcher-box _) satellite-meta)
+           #,update-asteroids
+           #,update-cata
+           #,update-dispatcher
+           ))]))
 
 
 (define-syntax (define-artificial-satellite stx)
@@ -156,6 +134,4 @@
                                                                                         #`(generater-macro #,form)))))]
      #`(define-satellite satellite-name aster-name
          #,@match-clauses)]))
-
-
 

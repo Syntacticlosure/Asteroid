@@ -5,7 +5,7 @@
          print)
 
 (define-asteroid BaseArith
-  (lit [c number?])
+  (lit [c : number?])
   (add lhs rhs)
   (sub lhs rhs))
 
@@ -22,10 +22,29 @@
 
 (print (add (lit 1) (lit 2)))
 
-(define-simple-macro (genPrint (tag x:aster-field ...))
+(define-simple-macro (gen-print (tag x:aster-field ...))
   [(tag x.name ...) `(tag ,x.name ...)])
 
 ;; get print for MulArith for free
-(define-artificial-satellite print MulArith genPrint)
+(define-artificial-satellite print MulArith gen-print)
 
 (print (add (mul (lit 1) (lit 2)) (div (lit 2) (lit 1))))
+
+(define-satellite evaluate BaseArith
+  [(lit x) x]
+  [(add x y) (+ x y)]
+  [(sub x y) (- x y)])
+
+(define-satellite evaluate MulArith
+  [(mul x y) (* x y)]
+  [(div x y) (/ x y)])
+
+(evaluate (add (lit 1) (mul (lit 2) (lit 3))))
+
+(define-simple-macro (gen-to-sexpr (tag x:aster-field ...))
+  [(tag x.name ...) `(tag ,x.name ...)])
+
+(define-artificial-satellite to-sexpr BaseArith gen-to-sexpr)
+(define-artificial-satellite to-sexpr MulArith gen-to-sexpr)
+
+(to-sexpr (add (mul (lit 1) (lit 2)) (div (lit 2) (lit 1))))
