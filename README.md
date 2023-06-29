@@ -52,4 +52,18 @@ generate match clauses by metaprogramming:
 (to-sexpr (add (mul (lit 1) (lit 2)) (div (lit 2) (lit 1))))
 ;; output: '(add (mul (lit 1) (lit 2)) (div (lit 2) (lit 1)))
 ```
+
+
+```racket
+(define-simple-macro (gen-transform (tag x:aster-field ...))
+  [(tag x.name ...) (tag x.name ...)])
+
+(define-artificial-satellite normalize-lam-body Expr gen-transform)
+
+(define-satellite normalize-lam-body Expr
+  [(Lam vars bodies) (Lam vars (list (Begin bodies)))])
+
+(normalize-lam-body (App (Lam '(x y) (list (Var 'x) (Var 'y))) (list (Lit 1) (Lit 2))))
+```
+
 compared to nanopass, asteroid could control the process of automatic clause generation in a more powerful way.
