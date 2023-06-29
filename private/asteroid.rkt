@@ -49,7 +49,7 @@
                   [((tag . rst) ...) #'(tag ...)]))]
         #:with (aster-struct ...) structs
         (expand-export
-         #'(combine-out (struct-out aster-struct) ...)
+         #'(combine-out (struct-out aster-struct) ... aster-name)
          modes)]))))
 
 
