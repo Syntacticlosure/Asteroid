@@ -5,7 +5,7 @@ finally tagless style with initial encodings
 define a new language by `define-asteroid`:
 ```racket
 (define-asteroid BaseArith
-  (lit [c number?])
+  (lit [c : number?])
   (add lhs rhs)
   (sub lhs rhs))
 
