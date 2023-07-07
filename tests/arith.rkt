@@ -26,7 +26,7 @@
   [(tag x.name ...) `(tag ,x.name ...)])
 
 ;; get print for MulArith for free
-(define-artificial-satellite print MulArith gen-print)
+(define-artificial-satellite print MulArith (gen-print))
 
 (print (add (mul (lit 1) (lit 2)) (div (lit 2) (lit 1))))
 
@@ -44,7 +44,7 @@
 (define-simple-macro (gen-to-sexpr (tag x:aster-field ...))
   [(tag x.name ...) `(tag ,x.name ...)])
 
-(define-artificial-satellite to-sexpr BaseArith gen-to-sexpr)
-(define-artificial-satellite to-sexpr MulArith gen-to-sexpr)
+(define-artificial-satellite to-sexpr BaseArith (gen-to-sexpr))
+(define-artificial-satellite to-sexpr MulArith (gen-to-sexpr))
 
 (to-sexpr (add (mul (lit 1) (lit 2)) (div (lit 2) (lit 1))))

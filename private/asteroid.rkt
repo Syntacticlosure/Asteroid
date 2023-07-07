@@ -123,7 +123,7 @@
 
 (define-syntax (define-artificial-satellite stx)
   (syntax-parse stx
-    [(_ satellite-name:id aster-name:id generater-macro:id)
+    [(_ satellite-name:id aster-name:id (generater-macro:id . args))
      #:do [(match-define (asteroid-static-infos aster-cata aster-forms) (syntax-local-value #'aster-name))
            (define generater-proc (syntax-local-value #'generater-macro))
            (define match-clauses (datum->syntax #'ctx (for/list ([form (in-list (syntax-e aster-forms))])
@@ -131,7 +131,7 @@
                                                                                         #'generater-macro
                                                                                         'expression
                                                                                         #f
-                                                                                        #`(generater-macro #,form)))))]
+                                                                                        #`(generater-macro #,form . args)))))]
      #`(define-satellite satellite-name aster-name
          #,@match-clauses)]))
 

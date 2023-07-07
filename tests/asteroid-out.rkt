@@ -9,3 +9,5 @@
   [(lit c) c]
   [(add lhs rhs) `(+ ,lhs ,rhs)]
   [(sub lhs rhs) `(- ,lhs ,rhs)])
+
+(pprint (add (lit 1) (lit 2)))

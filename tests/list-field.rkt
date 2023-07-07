@@ -12,7 +12,7 @@
 (define-simple-macro (gen-transform (tag x:aster-field ...))
   [(tag x.name ...) (tag x.name ...)])
 
-(define-artificial-satellite normalize-lam-body Expr gen-transform)
+(define-artificial-satellite normalize-lam-body Expr (gen-transform))
 
 (define-satellite normalize-lam-body Expr
   [(Lam vars bodies) (Lam vars (list (Begin bodies)))])
