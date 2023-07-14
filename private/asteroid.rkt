@@ -10,13 +10,15 @@
          (for-syntax aster-field)
          asteroid-out)
 
-(begin-for-syntax 
-  (define-syntax-class (aster-field [recursive-wrapper values])
+(begin-for-syntax
+  (define-syntax-class (aster-field [recursive-wrapper values] #:recur-on-annot [recur-on-annot #f])
     (pattern name:id
       #:attr annot #'any/c
-      #:attr wrapped (recursive-wrapper #'name))
+      #:attr wrapped ((if recur-on-annot values recursive-wrapper) #'name))
     (pattern [name:id (~datum :) annot]
-      #:attr wrapped #'name)
+      #:attr wrapped (if
+                      (and recur-on-annot (free-identifier=? #'annot recur-on-annot))
+                      (recursive-wrapper #'name) #'name))
     (pattern [(~literal list) (~var x (aster-field recursive-wrapper))]
       #:with (n) (generate-temporaries #'(x))
       #:attr name #'n
@@ -68,7 +70,7 @@
     #:property prop:procedure (struct-field-index transformer) #:transparent)
   (define (init-satellite stx)
     (syntax-parse stx
-      [(_ satellite-name:id aster-name:id match-clauses ...)
+      [(_ satellite-name:id . _)
        #`(begin
            (define-for-syntax cata-box (box #'base-cata))
            (define-for-syntax dispatcher-box (box #'base-dispatcher))
@@ -81,13 +83,8 @@
 
 (define-syntax (define-satellite stx)
   (syntax-parse stx
-    [(_ satellite-name:id aster-name:id match-clauses ...)
-     #:do [(define satellite-meta (syntax-local-value #'satellite-name (λ () #f)))]
-     #:when (not satellite-meta)
-     #:do [(define satellite-def (init-satellite stx))]
-     #`(begin
-         #,satellite-def
-         (define-satellite satellite-name aster-name match-clauses ...))]
+    [(_ satellite-name:id)
+     (init-satellite stx)]
     [(_ satellite-name:id aster-name:id match-clauses ...)
      #:do [(define satellite-meta (syntax-local-value #'satellite-name))
            (match-define (satellite-static-infos asteroids-box cata-box dispatcher-box trans) satellite-meta)
