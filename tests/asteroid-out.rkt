@@ -4,7 +4,7 @@
 
 
 (print (add (lit 1) (lit 2)))
-
+(define-satellite pprint)
 (define-satellite pprint BaseArith
   [(lit c) c]
   [(add lhs rhs) `(+ ,lhs ,rhs)]

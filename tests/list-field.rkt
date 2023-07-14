@@ -9,6 +9,8 @@
   (App f (list args))
   (Begin (list bodies)))
 
+(define-satellite normalize-lam-body)
+
 (define-simple-macro (gen-transform (tag x:aster-field ...))
   [(tag x.name ...) (tag x.name ...)])
 

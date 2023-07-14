@@ -15,6 +15,9 @@
 
 (add (mul (lit 1) (lit 2)) (sub (lit 2) (lit 0)))
 
+(define-satellite print)
+(define-satellite evaluate)
+(define-satellite to-sexpr)
 (define-satellite print BaseArith
   [(lit x) x]
   [(add x y) `(+ ,x ,y)]
@@ -44,7 +47,6 @@
 (define-simple-macro (gen-to-sexpr (tag x:aster-field ...))
   [(tag x.name ...) `(tag ,x.name ...)])
 
-(define-artificial-satellite to-sexpr BaseArith (gen-to-sexpr))
-(define-artificial-satellite to-sexpr MulArith (gen-to-sexpr))
+(define-artificial-satellite to-sexpr (BaseArith MulArith) (gen-to-sexpr))
 
 (to-sexpr (add (mul (lit 1) (lit 2)) (div (lit 2) (lit 1))))

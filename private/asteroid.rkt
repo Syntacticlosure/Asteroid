@@ -130,5 +130,8 @@
                                                                                         #f
                                                                                         #`(generater-macro #,form . args)))))]
      #`(define-satellite satellite-name aster-name
-         #,@match-clauses)]))
+         #,@match-clauses)]
+    [(_ satellite-name:id (aster-name:id ...) . rest)
+     #`(begin
+         (define-artificial-satellite satellite-name aster-name . rest) ...)]))
 
